@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+/*
+  Custom theme tokens for VERDICT.
+  Tailwind v4 supports defining theme values directly in CSS.
+*/
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius: var(--radius);
+}
+
+:root {
+  --background: oklch(100% 0 0);
+  --foreground: oklch(14.5% 0 0 240);
+  --card: oklch(100% 0 0);
+  --card-foreground: oklch(14.5% 0 0 240);
+  --popover: oklch(100% 0 0);
+  --popover-foreground: oklch(14.5% 0 0 240);
+  --primary: oklch(20.5% 0 0);
+  --primary-foreground: oklch(98.5% 0 0);
+  --secondary: oklch(97% 0 0);
+  --secondary-foreground: oklch(14.5% 0 0);
+  --muted: oklch(97% 0 0);
+  --muted-foreground: oklch(55.6% 0 0 240);
+  --accent: oklch(97% 0 0);
+  --accent-foreground: oklch(14.5% 0 0);
+  --destructive: oklch(57.7% 24.5 27.3);
+  --destructive-foreground: oklch(98.5% 0 0);
+  --border: oklch(90% 0 0);
+  --input: oklch(90% 0 0);
+  --ring: oklch(14.5% 0 0);
+  --radius: 0.625rem;
+}
+
+.dark {
+  --background: oklch(14.5% 0 0);
+  --foreground: oklch(98.5% 0 0);
+  --card: oklch(20.5% 0 0);
+  --card-foreground: oklch(98.5% 0 0);
+  --popover: oklch(20.5% 0 0);
+  --popover-foreground: oklch(98.5% 0 0);
+  --primary: oklch(92.2% 0 0);
+  --primary-foreground: oklch(20.5% 0 0);
+  --secondary: oklch(26% 0 0);
+  --secondary-foreground: oklch(98.5% 0 0);
+  --muted: oklch(26% 0 0);
+  --muted-foreground: oklch(70% 0 0);
+  --accent: oklch(26% 0 0);
+  --accent-foreground: oklch(98.5% 0 0);
+  --destructive: oklch(70.4% 19.1% 22.2);
+  --destructive-foreground: oklch(98.5% 0 0);
+  --border: oklch(100% 0 0 / 10%);
+  --input: oklch(100% 0 0 / 15%);
+  --ring: oklch(56% 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  .container-default {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+  .section-padding {
+    @apply py-16 sm:py-20 lg:py-24;
+  }
+}

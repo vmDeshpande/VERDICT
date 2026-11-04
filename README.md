@@ -368,17 +368,12 @@ evaluation gates described in the roadmap are complete.
 
 ## Getting started
 
-The repository setup and exact commands will be finalized during
-Phase 1. The intended local development dependencies are:
+### Prerequisites
 
--   Node.js LTS compatible with the selected Next.js release.
--   npm or the package manager selected by the repository.
--   PostgreSQL with pgvector enabled.
--   Redis.
--   An S3-compatible local or remote object store for evidence files.
--   API credentials for the selected AI provider.
+-   Node.js 22 or later (LTS recommended).
+-   Docker and Docker Compose for local PostgreSQL.
 
-Expected high-level workflow:
+### Install and run
 
 ``` bash
 # Clone the repository
@@ -391,19 +386,46 @@ npm install
 # Configure environment
 cp .env.example .env
 
-# Start local infrastructure
+# Start local PostgreSQL
 docker compose up -d
+
+# Generate Prisma Client (also runs automatically on install)
+npm run db:generate
 
 # Apply database migrations
 npm run db:migrate
 
-# Start development applications
+# Start the development server
 npm run dev
+# Opens http://localhost:3000
 ```
 
-These commands are proposed conventions and should only be treated as
-executable once the corresponding scripts and files have been
-implemented.
+### Available scripts
+
+| Command              | Description                              |
+| -------------------- | ---------------------------------------- |
+| `npm run dev`        | Start development server (Turbopack)     |
+| `npm run build`      | Production build (webpack)               |
+| `npm run start`      | Start production server                  |
+| `npm run lint`       | Run ESLint                               |
+| `npm run typecheck`  | Run TypeScript type check                |
+| `npm run test`       | Run Vitest unit tests                    |
+| `npm run db:generate`| Generate Prisma Client                   |
+| `npm run db:migrate` | Apply pending migrations                 |
+| `npm run db:push`    | Sync schema to database (no migration)   |
+| `npm run db:reset`   | Reset database and re-apply migrations   |
+
+### Project structure
+
+``` text
+verdict/
+├── src/app/           # Next.js App Router
+├── src/components/    # UI and landing page sections
+├── src/lib/           # Prisma client, config, utilities
+├── prisma/            # Schema and migrations
+├── docs/              # Architecture and security notes
+└── public/            # Static assets
+```
 
 ## Configuration
 
@@ -494,7 +516,7 @@ Minimum expectations:
 
 ## Roadmap
 
-See [ROADMAP.md](./ROADMAP.md) for milestones, deliverables,
+See [ROADMAP.md](./docs/ROADMAP.md) for milestones, deliverables,
 dependencies, acceptance criteria, and release gates.
 
 ## Contributing

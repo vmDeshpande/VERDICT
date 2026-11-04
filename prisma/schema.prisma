@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Identity & users
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid()) @db.Uuid
+  email         String    @unique
+  name          String?
+  image         String?
+  passwordHash String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------------
+// Cases
+// ---------------------------------------------------------------------------
+
+model Case {
+  id          String         @id @default(cuid()) @db.Uuid
+  title       String
+  description String?
+  jurisdiction String
+  courtType   String?
+  caseType    String
+  isFictional Boolean        @default(false)
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  parties     CaseParty[]
+  facts       CaseFact[]
+  issues      CaseIssue[]
+  materials   CaseMaterial[]
+  courtrooms  Courtroom[]
+
+  @@index([jurisdiction])
+  @@index([caseType])
+  @@map("cases")
+}
+
+model CaseParty {
+  id        String   @id @default(cuid()) @db.Uuid
+  caseId    String   @map("case_id")
+  name      String
+  role      String
+  side      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  case Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@map("case_parties")
+}
+
+model CaseFact {
+  id        String   @id @default(cuid()) @db.Uuid
+  caseId    String   @map("case_id")
+  text      String
+  order     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  case Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@map("case_facts")
+}
+
+model CaseIssue {
+  id        String   @id @default(cuid()) @db.Uuid
+  caseId    String   @map("case_id")
+  text      String
+  order     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  case Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@map("case_issues")
+}
+
+model CaseMaterial {
+  id        String   @id @default(cuid()) @db.Uuid
+  caseId    String   @map("case_id")
+  type      String
+  title     String
+  url       String?
+  text      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  case Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@map("case_materials")
+}
+
+// ---------------------------------------------------------------------------
+// Courtrooms
+// ---------------------------------------------------------------------------
+
+model Courtroom {
+  id            String           @id @default(cuid()) @db.Uuid
+  title         String
+  jurisdiction  String
+  courtType     String?
+  caseId        String?          @map("case_id")
+  status        String           @default("CREATED")
+  templateKey   String?          @map("template_key")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+
+  case          Case?            @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  members       CourtroomMember[]
+  phases        TrialPhase[]
+  events        TrialEvent[]
+
+  @@index([status])
+  @@index([jurisdiction])
+  @@map("courtrooms")
+}
+
+model CourtroomMember {
+  id          String    @id @default(cuid()) @db.Uuid
+  courtroomId String    @map("courtroom_id")
+  userId      String    @map("user_id")
+  role        String
+  joinedAt    DateTime  @default(now()) @map("joined_at")
+
+  courtroom Courtroom @relation(fields: [courtroomId], references: [id], onDelete: Cascade)
+
+  @@unique([courtroomId, userId])
+  @@index([courtroomId])
+  @@map("courtroom_members")
+}
+
+// ---------------------------------------------------------------------------
+// Trial phases & events
+// ---------------------------------------------------------------------------
+
+model TrialPhase {
+  id          String   @id @default(cuid()) @db.Uuid
+  courtroomId String   @map("courtroom_id")
+  key         String
+  label       String
+  order       Int
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  courtroom Courtroom @relation(fields: [courtroomId], references: [id], onDelete: Cascade)
+
+  @@index([courtroomId])
+  @@map("trial_phases")
+}
+
+model TrialEvent {
+  id           String   @id @default(cuid()) @db.Uuid
+  courtroomId String   @map("courtroom_id")
+  sequence     Int
+  type         String
+  actorId      String? @map("actor_id")
+  payload      Json
+  schemaVersion Int    @default(1) @map("schema_version")
+  correlationId String? @map("correlation_id")
+  occurredAt   DateTime @default(now()) @map("occurred_at")
+
+  courtroom Courtroom @relation(fields: [courtroomId], references: [id], onDelete: Cascade)
+
+  @@index([courtroomId, sequence])
+  @@unique([courtroomId, sequence])
+  @@map("trial_events")
+}
