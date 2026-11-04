@@ -24,7 +24,9 @@
     ],
     "types": [
       "vitest/globals",
-      "@testing-library/jest-dom/vitest"
+      "@testing-library/jest-dom/vitest",
+      "react",
+      "react-dom"
     ],
     "paths": {
       "@/*": [

@@ -6,8 +6,7 @@ const envSchema = z.object({
     .default("development"),
   PORT: z.coerce.number().default(3000),
   APP_URL: z.url().default("http://localhost:3000"),
-  DATABASE_URL: z.string().url("DATABASE_URL must be a valid URL"),
-  TEST_DATABASE_URL: z.string().url("TEST_DATABASE_URL must be a valid URL"),
+  MONGODB_URI: z.string().min(1, "MONGODB_URI is required"),
 });
 
 type Env = z.infer<typeof envSchema>;

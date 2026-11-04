@@ -103,7 +103,7 @@ Deliverables:
 
 -   [ ] Next.js application shell and design system.
 -   [ ] Express API application.
--   [ ] PostgreSQL and Prisma setup.
+-   [ ] MongoDB and Mongoose setup.
 -   [ ] Authentication and session handling.
 -   [ ] User profiles and role model.
 -   [ ] Case CRUD and case library.
@@ -186,7 +186,7 @@ Deliverables:
 -   [ ] Manual ingestion path for approved documents.
 -   [ ] Text extraction and section/paragraph segmentation.
 -   [ ] Metadata and full-text indexing.
--   [ ] pgvector embeddings and retrieval.
+-   [ ] Vector embeddings and retrieval.
 -   [ ] Source provenance and checksums.
 -   [ ] Citation verification service.
 -   [ ] Effective-date and version selection.

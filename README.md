@@ -308,9 +308,8 @@ The initial stack is intentionally a modular monolith.
   UI                                 Tailwind CSS, shadcn/ui
   API                                Node.js, Express, TypeScript
   Real-time transport                Socket.IO
-  Primary database                   PostgreSQL
-  ORM                                Prisma
-  Vector retrieval                   pgvector
+  Primary database                   MongoDB
+  ODM                                Mongoose
   Cache and transient coordination   Redis
   Background jobs                    BullMQ
   File storage                       S3-compatible object storage
@@ -346,10 +345,10 @@ repository is created.
        |                 |                  |
        +-----------------+------------------+
                          |
-       +-----------------+------------------+
-       |                 |                  |
-   PostgreSQL          Redis           Object Storage
-   + pgvector          + BullMQ        Evidence / Files
++-----------------+------------------+
+        |                 |                  |
+    MongoDB          Redis           Object Storage
+                    + BullMQ        Evidence / Files
                          |
                  LEGAL SOURCE CONNECTORS
 ```
@@ -371,7 +370,7 @@ evaluation gates described in the roadmap are complete.
 ### Prerequisites
 
 -   Node.js 22 or later (LTS recommended).
--   Docker and Docker Compose for local PostgreSQL.
+-   Docker and Docker Compose for local MongoDB.
 
 ### Install and run
 
@@ -386,14 +385,8 @@ npm install
 # Configure environment
 cp .env.example .env
 
-# Start local PostgreSQL
+# Start local MongoDB
 docker compose up -d
-
-# Generate Prisma Client (also runs automatically on install)
-npm run db:generate
-
-# Apply database migrations
-npm run db:migrate
 
 # Start the development server
 npm run dev
@@ -410,10 +403,6 @@ npm run dev
 | `npm run lint`       | Run ESLint                               |
 | `npm run typecheck`  | Run TypeScript type check                |
 | `npm run test`       | Run Vitest unit tests                    |
-| `npm run db:generate`| Generate Prisma Client                   |
-| `npm run db:migrate` | Apply pending migrations                 |
-| `npm run db:push`    | Sync schema to database (no migration)   |
-| `npm run db:reset`   | Reset database and re-apply migrations   |
 
 ### Project structure
 
@@ -421,8 +410,7 @@ npm run dev
 verdict/
 ├── src/app/           # Next.js App Router
 ├── src/components/    # UI and landing page sections
-├── src/lib/           # Prisma client, config, utilities
-├── prisma/            # Schema and migrations
+├── src/lib/           # Mongoose models, config, utilities
 ├── docs/              # Architecture and security notes
 └── public/            # Static assets
 ```
@@ -437,8 +425,7 @@ NODE_ENV=development
 APP_URL=http://localhost:3000
 API_URL=http://localhost:4000
 
-DATABASE_URL=
-REDIS_URL=
+MONGODB_URI=
 
 AUTH_SECRET=
 

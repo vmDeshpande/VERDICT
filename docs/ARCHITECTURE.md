@@ -47,16 +47,16 @@ The architecture must provide:
                                                   reconnection, event
                                                   delivery
 
-  Primary database        PostgreSQL              Relational integrity,
-                                                  transactions,
-                                                  audit-friendly records
+Primary database        MongoDB              Document storage,
+                                                   flexible schema,
+                                                   audit-friendly records
 
-  ORM                     Prisma                  Typed database access
-                                                  and migrations
+  ODM                     Mongoose              Typed document access
+                                                   and schema validation
 
-  Vector search           pgvector                Keep initial semantic
-                                                  retrieval close to
-                                                  source metadata
+  Vector search           (deferred)            Keep initial semantic
+                                                   retrieval close to
+                                                   source metadata
 
   Cache/queues            Redis + BullMQ          Transient coordination
                                                   and background
@@ -68,9 +68,9 @@ The architecture must provide:
   AI                      Provider adapter +      Model flexibility and
                           custom orchestrator     control over workflow
 
-  Search                  PostgreSQL full-text +  Exact legal identifiers
-                          metadata filters, then  and semantic discovery
-                          pgvector                
+  Search                  MongoDB + (deferred)   Exact legal identifiers
+                          full-text +             and semantic discovery
+                          metadata filters                
   -----------------------------------------------------------------------
 
 Do not introduce microservices, Kafka, a dedicated vector database, or a
@@ -102,11 +102,11 @@ separate search cluster until measured requirements justify them.
                               |
                    INFRASTRUCTURE ADAPTERS
                               |
-       +----------------------+----------------------+
-       |                      |                      |
-   PostgreSQL              Redis              Object Storage
-   + pgvector              + BullMQ            Evidence files
-       |
++----------------------+----------------------+
+        |                      |                      |
+    MongoDB              Redis              Object Storage
+                         + BullMQ            Evidence files
+        |
   Legal Source Records
        |
   Source Connector Workers
@@ -126,7 +126,7 @@ verdict/
 ├── packages/
 │   ├── contracts/                 # Shared API/event schemas
 │   ├── config/                    # Shared lint/TypeScript config
-│   ├── database/                  # Prisma schema and migrations
+│   ├── database/                  # Mongoose schemas and models
 │   ├── domain/                    # Domain types and pure rules
 │   ├── ai/                        # Provider adapters and orchestration
 │   └── ui/                        # Shared UI components, if needed
@@ -154,7 +154,7 @@ verdict/
 
 The exact workspace tooling can be selected during repository
 initialization. Keep imports flowing inward toward domain logic; domain
-packages must not depend on Express, Prisma, Socket.IO, or a specific AI
+packages must not depend on Express, Mongoose, Socket.IO, or a specific AI
 provider.
 
 ## 5. Backend module boundaries
@@ -1079,11 +1079,10 @@ Initial deployment:
        WEB APP             API APP
        Next.js          Express + Socket.IO
                               |
-             +----------------+----------------+
-             |                |                |
-         PostgreSQL         Redis         Object Storage
-         + pgvector
-                              |
++----------------+----------------+
+              |                |                |
+          MongoDB         Redis         Object Storage
+                               |
                          WORKERS
                     +---------+---------+
                     |                   |
@@ -1101,7 +1100,7 @@ Record major decisions in `docs/decisions/`.
 Initial ADR topics:
 
 1.  Modular monolith versus microservices.
-2.  PostgreSQL and pgvector selection.
+2.  MongoDB and Mongoose selection.
 3.  Socket.IO event delivery and recovery.
 4.  Append-only trial event history.
 5.  AI action schema and backend validation.

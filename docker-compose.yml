@@ -1,26 +1,21 @@
 services:
-  postgres:
-    image: postgres:16
-    container_name: verdict-postgres
+  mongo:
+    image: mongo:9.0
+    container_name: verdict-mongo
     restart: unless-stopped
     environment:
-      POSTGRES_USER: verdict
-      POSTGRES_PASSWORD: verdict
-      POSTGRES_DB: verdict
+      MONGO_INITDB_ROOT_USERNAME: verdict
+      MONGO_INITDB_ROOT_PASSWORD: verdict
+      MONGO_INITDB_DATABASE: verdict
     ports:
-      - "5432:5432"
+      - "27017:27017"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mongo_data:/data/db
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U verdict -d verdict"]
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 }).ok"]
       interval: 5s
       timeout: 5s
       retries: 5
 
 volumes:
-  postgres_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./docker/volumes/postgres
+  mongo_data:
