@@ -7,6 +7,8 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(3000),
   APP_URL: z.url().default("http://localhost:3000"),
   MONGODB_URI: z.string().min(1, "MONGODB_URI is required"),
+  GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().optional(),
 });
 
 type Env = z.infer<typeof envSchema>;

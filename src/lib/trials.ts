@@ -42,6 +42,32 @@ const pendingObjectionSchema = new Schema(
   { _id: false }
 );
 
+const judgeJobSchema = new Schema(
+  {
+    jobId: { type: String, required: true, trim: true, maxlength: 256 },
+    trialId: { type: String, required: true, trim: true, maxlength: 128 },
+    triggerEventId: { type: String, required: true, trim: true, maxlength: 128 },
+    taskType: {
+      type: String,
+      required: true,
+      enum: ['INTRODUCTION', 'OBSERVATION', 'FINAL_JUDGMENT'],
+    },
+    status: {
+      type: String,
+      required: true,
+      enum: ['CLAIMED', 'IN_PROGRESS', 'SUCCEEDED', 'FAILED', 'RETRYABLE', 'EXPIRED'],
+    },
+    claimedBy: { type: String, required: true, trim: true, maxlength: 128 },
+    leaseToken: { type: String, required: true, trim: true, maxlength: 128 },
+    leaseExpiresAt: { type: Date, required: true },
+    createdAt: { type: Date, required: true },
+    updatedAt: { type: Date, required: true },
+    modelOutput: { type: Schema.Types.Mixed, default: null },
+    error: { type: Schema.Types.Mixed, default: null },
+  },
+  { _id: false }
+);
+
 const trialSchema = new Schema(
   {
     courtroomId: {
@@ -86,6 +112,10 @@ const trialSchema = new Schema(
     eventSequence: { type: Number, required: true, min: 0, default: 0 },
     version: { type: Number, required: true, min: 0, default: 0 },
     pendingObjection: { type: pendingObjectionSchema, default: null },
+    judgeJobs: {
+      type: [judgeJobSchema],
+      default: [],
+    },
     events: {
       type: [trialEventSchema],
       default: [],
