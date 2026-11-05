@@ -1,21 +1,21 @@
-import { Schema, model } from "mongoose";
+import { Schema, model, models } from 'mongoose';
 
 const courtroomMemberSchema = new Schema(
   {
     courtroomId: {
       type: Schema.Types.ObjectId,
-      ref: "Courtroom",
+      ref: 'Courtroom',
       required: true,
     },
     userId: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
     },
     role: {
       type: String,
       required: true,
-      enum: ["Plaintiff", "Defendant", "Judge", "Observer", "Host"],
+      enum: ['PLAINTIFF', 'DEFENDANT', 'PROSECUTION', 'DEFENSE'],
     },
     joinedAt: {
       type: Date,
@@ -30,5 +30,5 @@ const courtroomMemberSchema = new Schema(
 courtroomMemberSchema.index({ courtroomId: 1, userId: 1 }, { unique: true });
 courtroomMemberSchema.index({ courtroomId: 1 });
 
-export const CourtroomMember = model("CourtroomMember", courtroomMemberSchema);
+export const CourtroomMember = models.CourtroomMember || model('CourtroomMember', courtroomMemberSchema);
 export type CourtroomMemberDocument = InstanceType<typeof CourtroomMember>;

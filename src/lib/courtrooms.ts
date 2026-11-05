@@ -1,10 +1,10 @@
-import { Schema, model } from "mongoose";
+import { Schema, model, models } from 'mongoose';
 
 const courtroomSchema = new Schema(
   {
     caseId: {
       type: Schema.Types.ObjectId,
-      ref: "Case",
+      ref: 'Case',
     },
     title: {
       type: String,
@@ -12,7 +12,7 @@ const courtroomSchema = new Schema(
     },
     jurisdiction: {
       type: String,
-      enum: ["India", "United States"],
+      enum: ['India', 'United States'],
     },
     courtType: {
       type: String,
@@ -20,12 +20,12 @@ const courtroomSchema = new Schema(
     },
     caseType: {
       type: String,
-      enum: ["Criminal", "Civil"],
+      enum: ['Criminal', 'Civil'],
     },
     status: {
       type: String,
-      enum: ["CREATED", "WAITING", "ACTIVE", "COMPLETED", "ARCHIVED"],
-      default: "CREATED",
+      enum: ['CREATED', 'WAITING', 'ACTIVE', 'COMPLETED', 'ARCHIVED'],
+      default: 'CREATED',
     },
     templateKey: {
       type: String,
@@ -41,6 +41,11 @@ const courtroomSchema = new Schema(
       type: Number,
       default: 2,
     },
+    hostUserId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
   },
   {
     timestamps: true,
@@ -50,6 +55,7 @@ const courtroomSchema = new Schema(
 courtroomSchema.index({ status: 1 });
 courtroomSchema.index({ jurisdiction: 1 });
 courtroomSchema.index({ invitationCode: 1 }, { unique: true });
+courtroomSchema.index({ hostUserId: 1 });
 
-export const Courtroom = model("Courtroom", courtroomSchema);
+export const Courtroom = models.Courtroom || model('Courtroom', courtroomSchema);
 export type CourtroomDocument = InstanceType<typeof Courtroom>;

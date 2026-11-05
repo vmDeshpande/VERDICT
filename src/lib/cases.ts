@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+import { Schema, model, models } from 'mongoose';
 
 const caseSchema = new Schema(
   {
@@ -14,7 +14,7 @@ const caseSchema = new Schema(
     jurisdiction: {
       type: String,
       required: true,
-      enum: ["India", "United States"],
+      enum: ['India', 'United States'],
     },
     courtType: {
       type: String,
@@ -23,7 +23,7 @@ const caseSchema = new Schema(
     caseType: {
       type: String,
       required: true,
-      enum: ["Criminal", "Civil"],
+      enum: ['Criminal', 'Civil'],
     },
     isFictional: {
       type: Boolean,
@@ -31,16 +31,8 @@ const caseSchema = new Schema(
     },
     creatorId: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
-    },
-    plaintiffId: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-    },
-    defendantId: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
     },
   },
   {
@@ -52,5 +44,5 @@ caseSchema.index({ jurisdiction: 1 });
 caseSchema.index({ caseType: 1 });
 caseSchema.index({ creatorId: 1 });
 
-export const Case = model("Case", caseSchema);
+export const Case = models.Case || model('Case', caseSchema);
 export type CaseDocument = InstanceType<typeof Case>;
