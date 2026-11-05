@@ -128,7 +128,7 @@ Deliverables:
 -   [ ] Trial state machine.
 -   [ ] Courtroom templates and phase configuration.
 -   [ ] Server-authoritative turn management.
--   [ ] Socket.IO connection and room authorization.
+-   [ ] Authenticated command APIs and cursor-based polling for courtroom updates.
 -   [ ] Argument submission and delivery.
 -   [ ] Transcript event persistence.
 -   [ ] Objection submission and basic rulings.

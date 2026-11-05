@@ -1,5 +1,8 @@
 import { Schema, model, models } from 'mongoose';
 
+export const COURTROOM_MEMBER_ROLES = ['PLAINTIFF', 'DEFENDANT', 'PROSECUTION', 'DEFENSE'] as const;
+export type CourtroomMemberRole = (typeof COURTROOM_MEMBER_ROLES)[number];
+
 const courtroomMemberSchema = new Schema(
   {
     courtroomId: {
@@ -15,7 +18,7 @@ const courtroomMemberSchema = new Schema(
     role: {
       type: String,
       required: true,
-      enum: ['PLAINTIFF', 'DEFENDANT', 'PROSECUTION', 'DEFENSE'],
+      enum: COURTROOM_MEMBER_ROLES,
     },
     joinedAt: {
       type: Date,

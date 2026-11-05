@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     // Concurrency-safe approach: count current members, assign opposing role
     const members = await CourtroomMember.find({ courtroomId: courtroom._id }).sort({ joinedAt: 1 });
     if (members.length !== 1 || members.length >= Math.min(courtroom.maxParticipants || 2, 2)) {
-      return NextResponse.json({ error: 'Courtroom is full' }, { status: 400 });
+      return NextResponse.json({ error: 'Courtroom is full' }, { status: 409 });
     }
 
     const hostMember = members.find((member) => member.userId.toString() === courtroom.hostUserId.toString());

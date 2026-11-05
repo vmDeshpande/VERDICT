@@ -413,22 +413,23 @@ npm run dev
 | `npm run start`      | Start production server                  |
 | `npm run lint`       | Run ESLint                               |
 | `npm run typecheck`  | Run TypeScript type check                |
-| `npm run test`       | Run Vitest unit tests                    |
-| `npm run test:e2e`   | Run MongoDB-backed Playwright tests      |
+| `npm run test`       | Run Vitest unit and MongoDB tests         |
+| `npm run test:e2e`   | Run two-user Playwright tests             |
 
-For integration tests, start MongoDB and set `TEST_MONGODB_URI` in `.env`
-to a separate database whose name contains a `test` segment, such as
-`verdict_test`. There is no fallback to `MONGODB_URI`; Playwright refuses
-to start before connecting if this value is missing or unsafe. Build the
-app first because Playwright starts the production server. Integration
-tests use uniquely prefixed records and clean up only those records when
-finished.
+For all MongoDB-backed tests, start MongoDB and set `TEST_MONGODB_URI` in
+`.env` to a separate database whose name contains a `test` segment, such
+as `verdict_test`. There is no fallback to `MONGODB_URI`; the test database
+guard rejects missing or unsafe values before connecting. Tests use
+uniquely prefixed records and clean up only those records when finished.
+The Playwright suite also requires a production build and the Chromium
+browser.
 
 PowerShell example:
 
 ``` powershell
 $env:TEST_MONGODB_URI = "mongodb://verdict:verdict@localhost:27017/verdict_test?authSource=admin"
 npm run build
+npx playwright install chromium
 npm run test:e2e
 ```
 

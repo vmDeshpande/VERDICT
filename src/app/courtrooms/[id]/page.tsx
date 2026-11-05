@@ -1,10 +1,11 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Check, Clipboard, LoaderCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CourtroomTrialPanel } from '@/components/courtrooms/CourtroomTrialPanel';
 
 type CourtroomMember = {
   id: string;
@@ -35,30 +36,53 @@ export default function CourtroomPreparationPage({ params }: { params: Promise<{
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState('');
+  const loadedOnce = useRef(false);
 
   useEffect(() => {
-    const controller = new AbortController();
+    let active = true;
+    let inFlight = false;
+    let requestController: AbortController | null = null;
 
     async function loadCourtroom() {
+      if (inFlight) return;
+      inFlight = true;
+      requestController = new AbortController();
       try {
         const response = await fetch(`/api/courtrooms/${encodeURIComponent(id)}`, {
-          signal: controller.signal,
+          signal: requestController.signal,
+          cache: 'no-store',
         });
         const data = await response.json();
         if (!response.ok) {
-          setError(data.error || 'Unable to load courtroom');
+          if (!loadedOnce.current) setError(data.error || 'Unable to load courtroom');
           return;
         }
+        if (!active) return;
         setCourtroom(data.courtroom);
+        setError('');
+        loadedOnce.current = true;
       } catch {
-        if (!controller.signal.aborted) setError('Unable to load courtroom');
+        if (active && !loadedOnce.current && !requestController.signal.aborted) {
+          setError('Unable to load courtroom');
+        }
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        inFlight = false;
+        if (active) setLoading(false);
       }
     }
 
     void loadCourtroom();
-    return () => controller.abort();
+    const intervalId = window.setInterval(() => {
+      if (!document.hidden) void loadCourtroom();
+    }, 3_000);
+    window.addEventListener('focus', loadCourtroom);
+
+    return () => {
+      active = false;
+      requestController?.abort();
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', loadCourtroom);
+    };
   }, [id]);
 
   const invitationUrl = courtroom?.invitation
@@ -178,6 +202,8 @@ export default function CourtroomPreparationPage({ params }: { params: Promise<{
               </CardContent>
             </Card>
           )}
+
+          <CourtroomTrialPanel courtroomId={courtroom.id} members={courtroom.members} />
         </div>
       ) : null}
     </main>

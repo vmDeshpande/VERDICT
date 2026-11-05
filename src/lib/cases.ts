@@ -1,5 +1,8 @@
 import { Schema, model, models } from 'mongoose';
 
+export const CASE_TYPES = ['Criminal', 'Civil'] as const;
+export type CaseType = (typeof CASE_TYPES)[number];
+
 const caseSchema = new Schema(
   {
     title: {
@@ -23,7 +26,7 @@ const caseSchema = new Schema(
     caseType: {
       type: String,
       required: true,
-      enum: ['Criminal', 'Civil'],
+      enum: CASE_TYPES,
     },
     isFictional: {
       type: Boolean,
