@@ -13,7 +13,19 @@ const trialEventSchema = new Schema(
   {
     sequence: { type: Number, required: true, min: 1 },
     commandId: { type: String, required: true, trim: true, maxlength: 64 },
-    actorUserId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    source: { type: String, required: true, enum: ['PARTICIPANT', 'JUDGE'], default: 'PARTICIPANT' },
+    actorUserId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+      validate: {
+        validator: function (this: { source?: string }, value: unknown) {
+          if (this.source === 'JUDGE') return value === null || value === undefined;
+          return value !== null && value !== undefined;
+        },
+        message: 'actorUserId is required for participant events and must be null for judge events.',
+      },
+    },
     type: { type: String, required: true, enum: TRIAL_EVENT_TYPES },
     payload: { type: Schema.Types.Mixed, required: true },
     occurredAt: { type: Date, required: true },
@@ -55,7 +67,7 @@ const judgeJobSchema = new Schema(
     status: {
       type: String,
       required: true,
-      enum: ['CLAIMED', 'IN_PROGRESS', 'SUCCEEDED', 'FAILED', 'RETRYABLE', 'EXPIRED'],
+      enum: ['CLAIMED', 'SUCCEEDED', 'FAILED', 'RETRYABLE', 'EXPIRED'],
     },
     claimedBy: { type: String, required: true, trim: true, maxlength: 128 },
     leaseToken: { type: String, required: true, trim: true, maxlength: 128 },

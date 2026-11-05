@@ -209,7 +209,8 @@ function hashCommand(
 function createEvent(
   sequence: number,
   commandId: string,
-  actorUserId: Types.ObjectId,
+  source: 'PARTICIPANT' | 'JUDGE',
+  actorUserId: Types.ObjectId | null,
   type: TrialEventType,
   payload: Record<string, unknown>,
   occurredAt: Date
@@ -218,6 +219,7 @@ function createEvent(
     _id: new Types.ObjectId(),
     sequence,
     commandId,
+    source,
     actorUserId,
     type,
     payload,
@@ -256,7 +258,7 @@ function planCommand(
         pendingObjection: null,
         startedAt: occurredAt,
         events: [
-          createEvent(firstSequence, command.commandId, actorUserId, 'TRIAL_STARTED', {
+          createEvent(firstSequence, command.commandId, 'PARTICIPANT', actorUserId, 'TRIAL_STARTED', {
             caseTypeSnapshot: state.caseTypeSnapshot,
             templateKey: trial.templateKey,
             templateVersion: trial.templateVersion,
@@ -276,7 +278,7 @@ function planCommand(
         pendingObjection: null,
         completedAt: transition.state.status === 'COMPLETED' ? occurredAt : undefined,
         events: [
-          createEvent(firstSequence, command.commandId, actorUserId, 'ARGUMENT_SUBMITTED', {
+          createEvent(firstSequence, command.commandId, 'PARTICIPANT', actorUserId, 'ARGUMENT_SUBMITTED', {
             phaseKey,
             speakerRole: actorRole,
             text: command.text,
@@ -293,8 +295,10 @@ function planCommand(
 
       const target = trial.events.find((event) => event._id.toString() === command.targetEventId);
       const latestArgument = [...trial.events].reverse().find((event) => event.type === 'ARGUMENT_SUBMITTED');
+      if (!target || !target.actorUserId) {
+        throw new TrialCommandError('OBJECTION_TARGET_INVALID');
+      }
       if (
-        !target ||
         target.type !== 'ARGUMENT_SUBMITTED' ||
         !latestArgument ||
         !latestArgument._id.equals(target._id) ||
@@ -316,6 +320,7 @@ function planCommand(
       const objectionEvent = createEvent(
         firstSequence,
         command.commandId,
+        'PARTICIPANT',
         actorUserId,
         'OBJECTION_RAISED',
         {
@@ -349,6 +354,7 @@ function planCommand(
       const responseEvent = createEvent(
         firstSequence,
         command.commandId,
+        'PARTICIPANT',
         actorUserId,
         'OBJECTION_RESPONSE_RECORDED',
         {
@@ -364,6 +370,7 @@ function planCommand(
       const dispositionEvent = createEvent(
         firstSequence + 1,
         command.commandId,
+        'PARTICIPANT',
         actorUserId,
         'OBJECTION_DISPOSITION_RECORDED',
         {
@@ -522,7 +529,7 @@ export async function executeTrialCommand(
 export interface TrialEventView {
   id: string;
   sequence: number;
-  actorUserId: string;
+  actorUserId: string | null;
   commandId: string;
   type: TrialEventType;
   payload: Record<string, unknown>;
@@ -550,7 +557,7 @@ function toEventView(event: TrialEventRecord): TrialEventView {
   return {
     id: event._id.toString(),
     sequence: event.sequence,
-    actorUserId: event.actorUserId.toString(),
+    actorUserId: event.actorUserId ? event.actorUserId.toString() : null,
     commandId: event.commandId,
     type: event.type,
     payload: event.payload,

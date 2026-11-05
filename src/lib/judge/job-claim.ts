@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { Types } from 'mongoose';
+import { MAX_TRIAL_EVENTS } from '@/lib/trialTypes';
 import { Trial } from '@/lib/trials';
 
 export type JudgeJobTaskType = 'INTRODUCTION' | 'OBSERVATION' | 'FINAL_JUDGMENT';
-export type JudgeJobStatus = 'CLAIMED' | 'IN_PROGRESS' | 'SUCCEEDED' | 'FAILED' | 'RETRYABLE' | 'EXPIRED';
+export type JudgeJobStatus = 'CLAIMED' | 'SUCCEEDED' | 'FAILED' | 'RETRYABLE' | 'EXPIRED';
 
 export interface JudgeJobClaim {
   jobId: string;
@@ -51,13 +52,19 @@ export async function createJudgeJobClaim(
   leaseMs: number,
   now = new Date()
 ): Promise<JudgeJobClaim | null> {
+  const trialObjectId = new Types.ObjectId(trialId);
   const jobId = buildJudgeJobIdentity(trialId, triggerEventId, taskType);
   const leaseToken = randomUUID();
   const leaseExpiresAt = new Date(now.getTime() + leaseMs);
 
+  const exists = await Trial.exists({ _id: trialObjectId });
+  if (!exists) {
+    return null;
+  }
+
   const insertResult = await Trial.updateOne(
     {
-      _id: new Types.ObjectId(trialId),
+      _id: trialObjectId,
       judgeJobs: { $not: { $elemMatch: { jobId } } },
     },
     {
@@ -93,6 +100,11 @@ export async function createJudgeJobClaim(
     };
   }
 
+  const existing = await Trial.findOne({ _id: trialObjectId, 'judgeJobs.jobId': jobId }).lean();
+  if (!existing) {
+    return null;
+  }
+
   return claimJudgeJob(trialId, triggerEventId, taskType, claimedBy, leaseMs, now);
 }
 
@@ -112,6 +124,10 @@ export async function claimJudgeJob(
   const currentJob = existing?.judgeJobs?.find((job: JudgeJobRecord) => job.jobId === jobId) as JudgeJobRecord | undefined;
 
   if (!currentJob) {
+    const trialExists = await Trial.exists({ _id: new Types.ObjectId(trialId) });
+    if (!trialExists) {
+      return null;
+    }
     return createJudgeJobClaim(trialId, triggerEventId, taskType, claimedBy, leaseMs, now);
   }
 
@@ -231,7 +247,7 @@ export async function completeJudgeJob(
   payload: unknown,
   now = new Date()
 ): Promise<boolean> {
-  const result = await Trial.updateOne(
+  const current = await Trial.findOne(
     {
       _id: new Types.ObjectId(trialId),
       judgeJobs: {
@@ -242,6 +258,54 @@ export async function completeJudgeJob(
           leaseExpiresAt: { $gt: now },
         },
       },
+      eventSequence: { $lt: MAX_TRIAL_EVENTS },
+    },
+    { judgeJobs: 1, eventSequence: 1, version: 1 }
+  ).lean();
+
+  const currentJob = current?.judgeJobs?.find((job: JudgeJobRecord) => job.jobId === jobId) as JudgeJobRecord | undefined;
+  if (!currentJob) {
+    return false;
+  }
+
+  const nextSequence = (current?.eventSequence ?? 0) + 1;
+  const judgeEvent = {
+    _id: new Types.ObjectId(),
+    sequence: nextSequence,
+    commandId: `judge:${randomUUID()}`,
+    source: 'JUDGE',
+    actorUserId: null,
+    type: 'JUDGE_JUDGMENT',
+    payload: {
+      jobId,
+      triggerEventId: currentJob.triggerEventId,
+      taskType: currentJob.taskType,
+      modelOutput: payload,
+    },
+    occurredAt: now,
+  };
+
+  const result = await Trial.updateOne(
+    {
+      _id: new Types.ObjectId(trialId),
+      version: current?.version,
+      eventSequence: { $lt: MAX_TRIAL_EVENTS },
+      judgeJobs: {
+        $elemMatch: {
+          jobId,
+          status: 'CLAIMED',
+          leaseToken,
+          leaseExpiresAt: { $gt: now },
+        },
+      },
+      events: {
+        $not: {
+          $elemMatch: {
+            type: 'JUDGE_JUDGMENT',
+            'payload.jobId': jobId,
+          },
+        },
+      },
     },
     {
       $set: {
@@ -250,6 +314,13 @@ export async function completeJudgeJob(
         'judgeJobs.$[job].updatedAt': now,
         'judgeJobs.$[job].modelOutput': payload,
         'judgeJobs.$[job].error': null,
+      },
+      $push: {
+        events: judgeEvent,
+      },
+      $inc: {
+        eventSequence: 1,
+        version: 1,
       },
     },
     {

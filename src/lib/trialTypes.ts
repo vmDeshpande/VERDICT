@@ -16,6 +16,10 @@ export const TRIAL_EVENT_TYPES = [
   'OBJECTION_RAISED',
   'OBJECTION_RESPONSE_RECORDED',
   'OBJECTION_DISPOSITION_RECORDED',
+  'JUDGE_INTRODUCTION',
+  'JUDGE_OBSERVATION',
+  'JUDGE_QUESTION',
+  'JUDGE_JUDGMENT',
 ] as const;
 
 export const MAX_TRIAL_EVENTS = 256;
@@ -42,11 +46,14 @@ export interface TrialState {
   phaseTurnIndex: number;
 }
 
+export type TrialEventSource = 'PARTICIPANT' | 'JUDGE';
+
 export interface TrialEventRecord {
   _id: Types.ObjectId;
   sequence: number;
   commandId: string;
-  actorUserId: Types.ObjectId;
+  source: TrialEventSource;
+  actorUserId: Types.ObjectId | null;
   type: TrialEventType;
   payload: Record<string, unknown>;
   occurredAt: Date;
