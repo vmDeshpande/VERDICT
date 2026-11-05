@@ -28,6 +28,7 @@ const courtroomMemberSchema = new Schema(
 );
 
 courtroomMemberSchema.index({ courtroomId: 1, userId: 1 }, { unique: true });
+courtroomMemberSchema.index({ courtroomId: 1, role: 1 }, { unique: true });
 courtroomMemberSchema.index({ courtroomId: 1 });
 
 export const CourtroomMember = models.CourtroomMember || model('CourtroomMember', courtroomMemberSchema);

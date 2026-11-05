@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
 const userSchema = new Schema(
   {
@@ -25,7 +25,5 @@ const userSchema = new Schema(
   }
 );
 
-userSchema.index({ email: 1 }, { unique: true });
-
-export const User = model("User", userSchema);
+export const User = models.User || model("User", userSchema);
 export type UserDocument = InstanceType<typeof User>;

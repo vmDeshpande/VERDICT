@@ -302,15 +302,19 @@ The platform should:
 
 The initial stack is intentionally a modular monolith.
 
+Phase 1 runs as one Next.js application with App Router route handlers,
+MongoDB, and Mongoose. The remaining services below describe future
+capabilities, not infrastructure required to run the current application.
+
   Layer                              Preferred technology
   ---------------------------------- ---------------------------------------
   Web application                    Next.js, React, TypeScript
   UI                                 Tailwind CSS, shadcn/ui
-  API                                Node.js, Express, TypeScript
-  Real-time transport                Socket.IO
+    API                                Next.js route handlers
+    Real-time transport                Deferred
   Primary database                   MongoDB
   ODM                                Mongoose
-  Cache and transient coordination   Redis
+    Cache and transient coordination   Deferred
   Background jobs                    BullMQ
   File storage                       S3-compatible object storage
   AI integration                     Provider-agnostic TypeScript adapters
@@ -321,6 +325,9 @@ The stack is a design target; implementation details may evolve as the
 repository is created.
 
 ## Architecture overview
+
+The following diagram is a future architecture target; Phase 1 does not
+include the Express API, Socket.IO, Redis, or background workers.
 
 ``` text
                     WEB CLIENT
@@ -359,11 +366,15 @@ operational guidance.
 
 ## Project status
 
-**Status: Product specification and architecture planning.**
+**Status: Phase 1 application foundation.**
 
-This repository should not be considered production-ready until the
-implementation, tests, source coverage, security review, and AI
 evaluation gates described in the roadmap are complete.
+Registration, login, MongoDB-backed sessions, creator-owned case creation,
+and two-person courtroom invitations and preparation are implemented.
+MongoDB integration tests require a dedicated test database. This
+repository should not be considered production-ready until the broader
+testing, security review, legal-source coverage, and evaluation gates in
+the roadmap are complete.
 
 ## Getting started
 
@@ -403,6 +414,25 @@ npm run dev
 | `npm run lint`       | Run ESLint                               |
 | `npm run typecheck`  | Run TypeScript type check                |
 | `npm run test`       | Run Vitest unit tests                    |
+| `npm run test:e2e`   | Run MongoDB-backed Playwright tests      |
+
+For integration tests, start MongoDB and set `TEST_MONGODB_URI` in `.env`
+to a separate database whose name contains a `test` segment, such as
+`verdict_test`. There is no fallback to `MONGODB_URI`; Playwright refuses
+to start before connecting if this value is missing or unsafe. Build the
+app first because Playwright starts the production server. Integration
+tests use uniquely prefixed records and clean up only those records when
+finished.
+
+PowerShell example:
+
+``` powershell
+$env:TEST_MONGODB_URI = "mongodb://verdict:verdict@localhost:27017/verdict_test?authSource=admin"
+npm run build
+npm run test:e2e
+```
+
+The URI should use test-only credentials and a separate test database.
 
 ### Project structure
 

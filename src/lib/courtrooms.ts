@@ -37,6 +37,10 @@ const courtroomSchema = new Schema(
       sparse: true,
       trim: true,
     },
+    invitationExpiresAt: {
+      type: Date,
+      required: true,
+    },
     maxParticipants: {
       type: Number,
       default: 2,
@@ -54,7 +58,6 @@ const courtroomSchema = new Schema(
 
 courtroomSchema.index({ status: 1 });
 courtroomSchema.index({ jurisdiction: 1 });
-courtroomSchema.index({ invitationCode: 1 }, { unique: true });
 courtroomSchema.index({ hostUserId: 1 });
 
 export const Courtroom = models.Courtroom || model('Courtroom', courtroomSchema);

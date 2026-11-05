@@ -27,6 +27,14 @@ The architecture must provide:
 
 ## 2. Architectural decisions
 
+### Current Phase 1 implementation
+
+The repository is a single Next.js application. App Router route handlers
+provide the API, and MongoDB with Mongoose remains the primary database.
+Authentication uses bcryptjs and MongoDB-backed sessions with hashed
+random tokens in HTTP-only cookies. Express, Redis, Socket.IO, and AI
+services are future design options only; they are not part of Phase 1.
+
   -----------------------------------------------------------------------
   Concern                 Decision                Rationale
   ----------------------- ----------------------- -----------------------
@@ -38,14 +46,11 @@ The architecture must provide:
   Frontend                Next.js + React         Interactive application
                                                   and dashboard
 
-  Backend                 Express + TypeScript    Familiar, explicit API
-                                                  and domain
-                                                  orchestration
+  Backend                 Next.js route handlers  One application and
+                                                  API boundary for Phase 1
 
-  Real-time               Socket.IO               Rooms,
-                                                  acknowledgements,
-                                                  reconnection, event
-                                                  delivery
+  Real-time               Deferred                Not needed for the
+                                                  preparation-room flow
 
 Primary database        MongoDB              Document storage,
                                                    flexible schema,
@@ -58,9 +63,7 @@ Primary database        MongoDB              Document storage,
                                                    retrieval close to
                                                    source metadata
 
-  Cache/queues            Redis + BullMQ          Transient coordination
-                                                  and background
-                                                  processing
+  Cache/queues            Deferred                No Phase 1 requirement
 
   Files                   S3-compatible object    Private, scalable
                           storage                 evidence storage
@@ -76,7 +79,7 @@ Primary database        MongoDB              Document storage,
 Do not introduce microservices, Kafka, a dedicated vector database, or a
 separate search cluster until measured requirements justify them.
 
-## 3. High-level system
+## 3. Future system target (post-Phase 1)
 
 ``` text
                        BROWSER CLIENTS

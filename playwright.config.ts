@@ -1,4 +1,10 @@
 import { defineConfig } from "@playwright/test";
+import { loadEnvConfig } from "@next/env";
+import { requireTestDatabaseConfiguration } from "./src/lib/testing/test-database-config";
+
+loadEnvConfig(process.cwd());
+
+const { uri: testMongoUri } = requireTestDatabaseConfiguration(process.env.TEST_MONGODB_URI);
 
 export default defineConfig({
   testDir: "./src/tests/e2e",
@@ -24,5 +30,7 @@ export default defineConfig({
     command: "npm run start",
     url: "http://localhost:3000",
     timeout: 120000,
+    reuseExistingServer: false,
+    env: { MONGODB_URI: testMongoUri },
   },
 });

@@ -8,8 +8,8 @@ import { rateLimit, getClientKey } from '@/lib/auth/rate-limit';
 
 export async function POST(request: Request) {
   try {
-    const rateKey = getClientKey(request);
-    const rl = rateLimit(login:, 10, 60 * 1000);
+    const rateKey = getClientKey(request, 'login');
+    const rl = rateLimit(rateKey, 10, 60 * 1000);
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       },
       { status: 200 }
     );
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
   }
 }

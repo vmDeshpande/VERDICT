@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     await dbConnect();
     const newCase = await Case.create({
       title,
-      description: description || undefined,
+      description,
       jurisdiction,
       caseType,
       courtType: courtType || undefined,
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ case: newCase }, { status: 201 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to create case' }, { status: 500 });
   }
 }

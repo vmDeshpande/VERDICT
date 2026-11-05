@@ -38,7 +38,7 @@ export default function NewCasePage() {
       }
 
       router.push('/dashboard');
-    } catch (err) {
+    } catch {
       setError('Failed to create case');
       setLoading(false);
     }
@@ -59,7 +59,13 @@ export default function NewCasePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <Input id="description" value={description} onChange={(e) => setDescription(e.target.value)} />
+              <textarea
+                id="description"
+                className="flex min-h-32 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="jurisdiction">Jurisdiction</Label>

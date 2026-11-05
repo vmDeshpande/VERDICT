@@ -13,7 +13,7 @@ export function rateLimit(key: string, limit: number, windowMs: number): { allow
   const now = Date.now();
   const entry = store.get(key);
 
-  if (!entry || entry.resetAt < now) {
+  if (!entry || entry.resetAt <= now) {
     store.set(key, { count: 1, resetAt: now + windowMs });
     return { allowed: true, remaining: limit - 1 };
   }
@@ -29,5 +29,5 @@ export function rateLimit(key: string, limit: number, windowMs: number): { allow
 
 export function getClientKey(request: Request, identifier?: string): string {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-  return identifier ? ${ip}: : ip;
+  return identifier ? `${identifier}:${ip}` : ip;
 }

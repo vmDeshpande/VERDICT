@@ -6,28 +6,32 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
+type CaseOption = {
+  _id: string;
+  title: string;
+  caseType: 'Criminal' | 'Civil';
+};
+
 export default function NewCourtroomPage() {
   const router = useRouter();
-  const [cases, setCases] = useState<any[]>([]);
+  const [cases, setCases] = useState<CaseOption[]>([]);
   const [caseId, setCaseId] = useState('');
   const [hostRole, setHostRole] = useState('');
-  const [caseType, setCaseType] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetch('/api/cases')
-      .then((res) => res.json())
-      .then((data) => setCases(data.cases || []));
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to load cases');
+        return res.json();
+      })
+      .then((data) => setCases(data.cases || []))
+      .catch(() => setError('Failed to load your cases'));
   }, []);
 
-  useEffect(() => {
-    const c = cases.find((x) => x._id === caseId);
-    if (c) {
-      setCaseType(c.caseType);
-      setHostRole('');
-    }
-  }, [caseId, cases]);
+  const selectedCase = cases.find((caseOption) => caseOption._id === caseId);
+  const caseType = selectedCase?.caseType || '';
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -49,8 +53,8 @@ export default function NewCourtroomPage() {
       }
 
       const data = await res.json();
-      router.push(/courtrooms/);
-    } catch (err) {
+      router.push(`/courtrooms/${data.courtroom.id}`);
+    } catch {
       setError('Failed to create courtroom');
       setLoading(false);
     }
@@ -71,13 +75,16 @@ export default function NewCourtroomPage() {
                 id="case"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={caseId}
-                onChange={(e) => setCaseId(e.target.value)}
+                onChange={(event) => {
+                  setCaseId(event.target.value);
+                  setHostRole('');
+                }}
                 required
               >
                 <option value="">Select a case</option>
-                {cases.map((c) => (
-                  <option key={c._id} value={c._id}>
-                    {c.title} ({c.caseType})
+                {cases.map((caseOption) => (
+                  <option key={caseOption._id} value={caseOption._id}>
+                    {caseOption.title} ({caseOption.caseType})
                   </option>
                 ))}
               </select>
@@ -89,17 +96,16 @@ export default function NewCourtroomPage() {
                   id="hostRole"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={hostRole}
-                  onChange={(e) => setHostRole(e.target.value)}
+                  onChange={(event) => setHostRole(event.target.value)}
                   required
                 >
                   <option value="">Select your role</option>
-                  {caseType === 'Civil' && (
+                  {caseType === 'Civil' ? (
                     <>
                       <option value="PLAINTIFF">Plaintiff</option>
                       <option value="DEFENDANT">Defendant</option>
                     </>
-                  )}
-                  {caseType === 'Criminal' && (
+                  ) : (
                     <>
                       <option value="PROSECUTION">Prosecution</option>
                       <option value="DEFENSE">Defense</option>
@@ -108,7 +114,7 @@ export default function NewCourtroomPage() {
                 </select>
               </div>
             )}
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
             <Button type="submit" disabled={loading || !caseId || !hostRole}>
               {loading ? 'Creating...' : 'Create Courtroom'}
             </Button>

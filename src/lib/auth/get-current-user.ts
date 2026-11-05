@@ -22,12 +22,10 @@ export async function getCurrentUser() {
     return null;
   }
 
-  const user = await User.findById(session.userId).lean();
+  const user = await User.findById(session.userId).select('-passwordHash').lean();
   if (!user) {
     return null;
   }
 
-  // Never expose password hash
-  const { passwordHash, ...userWithoutPassword } = user as any;
-  return userWithoutPassword;
+  return user;
 }

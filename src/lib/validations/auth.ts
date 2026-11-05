@@ -8,7 +8,13 @@ export const registerSchema = z.object({
     .refine((password) => Buffer.byteLength(password, 'utf8') <= 72, {
       message: 'Password exceeds maximum length',
     }),
-  name: z.string().trim().min(1, 'Name is required').optional(),
+  name: z
+    .string()
+    .trim()
+    .max(80)
+    .optional()
+    .or(z.literal(''))
+    .transform((name) => name || undefined),
 });
 
 export const loginSchema = z.object({

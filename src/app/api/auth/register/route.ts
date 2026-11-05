@@ -8,8 +8,8 @@ import { rateLimit, getClientKey } from '@/lib/auth/rate-limit';
 
 export async function POST(request: Request) {
   try {
-    const rateKey = getClientKey(request);
-    const rl = rateLimit(egister:, 5, 60 * 1000);
+    const rateKey = getClientKey(request, 'register');
+    const rl = rateLimit(rateKey, 5, 60 * 1000);
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     let passwordHash: string;
     try {
       passwordHash = await hashPassword(password);
-    } catch (e) {
+    } catch {
       return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
     }
 
@@ -55,8 +55,8 @@ export async function POST(request: Request) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
-    if (error?.code === 11000) {
+  } catch (error) {
+    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 11000) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
     }
     return NextResponse.json({ error: 'Registration failed' }, { status: 500 });

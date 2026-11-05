@@ -7,6 +7,8 @@ import { getCurrentUser } from '@/lib/auth/get-current-user';
 import { createCourtroomSchema } from '@/lib/validations/courtroom';
 import { generateUniqueInvitationCode } from '@/lib/invite';
 
+const INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
 function isValidHostRoleForCaseType(caseType: string, hostRole: string): boolean {
   if (caseType === 'Civil') {
     return hostRole === 'PLAINTIFF' || hostRole === 'DEFENDANT';
@@ -49,19 +51,20 @@ export async function POST(request: Request) {
 
     const invitationCode = await generateUniqueInvitationCode();
 
-    let courtroom: any = null;
+    const courtroom = new Courtroom({
+      caseId: caseDoc._id,
+      title: caseDoc.title,
+      jurisdiction: caseDoc.jurisdiction,
+      courtType: caseDoc.courtType,
+      caseType: caseDoc.caseType,
+      status: 'WAITING',
+      hostUserId: user._id,
+      invitationCode,
+      invitationExpiresAt: new Date(Date.now() + INVITATION_TTL_MS),
+      maxParticipants: 2,
+    });
     try {
-      courtroom = await Courtroom.create({
-        caseId: caseDoc._id,
-        title: caseDoc.title,
-        jurisdiction: caseDoc.jurisdiction,
-        courtType: caseDoc.courtType,
-        caseType: caseDoc.caseType,
-        status: 'WAITING',
-        hostUserId: user._id,
-        invitationCode,
-        maxParticipants: 2,
-      });
+      await courtroom.save();
 
       await CourtroomMember.create({
         courtroomId: courtroom._id,
@@ -71,23 +74,35 @@ export async function POST(request: Request) {
       });
     } catch (error) {
       // Clean up incomplete records safely
-      if (courtroom?._id) {
-        try {
-          await CourtroomMember.deleteMany({ courtroomId: courtroom._id });
-        } catch (e) {
-          // ignore
-        }
-        try {
-          await Courtroom.deleteOne({ _id: courtroom._id });
-        } catch (e) {
-          // ignore
-        }
+      try {
+        await CourtroomMember.deleteMany({ courtroomId: courtroom._id });
+      } catch {
+        // ignore
+      }
+      try {
+        await Courtroom.deleteOne({ _id: courtroom._id });
+      } catch {
+        // ignore
       }
       throw error;
     }
 
-    return NextResponse.json({ courtroom }, { status: 201 });
+    return NextResponse.json(
+      {
+        courtroom: {
+          id: courtroom._id.toString(),
+          title: courtroom.title,
+          status: courtroom.status,
+          invitationCode: courtroom.invitationCode,
+          invitationExpiresAt: courtroom.invitationExpiresAt,
+        },
+      },
+      { status: 201 }
+    );
   } catch (error) {
+    if ((error as { code?: number })?.code === 11000) {
+      return NextResponse.json({ error: 'Could not create a unique invitation. Please try again.' }, { status: 409 });
+    }
     return NextResponse.json({ error: 'Failed to create courtroom' }, { status: 500 });
   }
 }

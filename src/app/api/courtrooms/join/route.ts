@@ -6,6 +6,16 @@ import { getCurrentUser } from '@/lib/auth/get-current-user';
 import { joinCourtroomSchema } from '@/lib/validations/courtroom';
 import { normalizeInvitationCode } from '@/lib/invite';
 
+function isValidHostRoleForCaseType(caseType: string, role: string): boolean {
+  if (caseType === 'Civil') {
+    return role === 'PLAINTIFF' || role === 'DEFENDANT';
+  }
+  if (caseType === 'Criminal') {
+    return role === 'PROSECUTION' || role === 'DEFENSE';
+  }
+  return false;
+}
+
 function getOpposingRole(caseType: string, existingRole: string): string | null {
   if (caseType === 'Civil') {
     if (existingRole === 'PLAINTIFF') return 'DEFENDANT';
@@ -40,6 +50,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid invitation code' }, { status: 404 });
     }
 
+    if (!courtroom.invitationExpiresAt || courtroom.invitationExpiresAt <= new Date()) {
+      return NextResponse.json({ error: 'Invitation has expired' }, { status: 410 });
+    }
+
+    if (courtroom.status !== 'WAITING') {
+      return NextResponse.json({ error: 'Courtroom is not accepting participants' }, { status: 409 });
+    }
+
     if (courtroom.hostUserId.toString() === user._id.toString()) {
       return NextResponse.json({ error: 'Cannot join your own courtroom' }, { status: 400 });
     }
@@ -55,11 +73,15 @@ export async function POST(request: Request) {
 
     // Concurrency-safe approach: count current members, assign opposing role
     const members = await CourtroomMember.find({ courtroomId: courtroom._id }).sort({ joinedAt: 1 });
-    if (members.length >= 2 || members.length >= (courtroom.maxParticipants || 2)) {
+    if (members.length !== 1 || members.length >= Math.min(courtroom.maxParticipants || 2, 2)) {
       return NextResponse.json({ error: 'Courtroom is full' }, { status: 400 });
     }
 
-    const hostMember = members[0];
+    const hostMember = members.find((member) => member.userId.toString() === courtroom.hostUserId.toString());
+    if (!hostMember || !isValidHostRoleForCaseType(courtroom.caseType, hostMember.role)) {
+      return NextResponse.json({ error: 'Courtroom host role is invalid' }, { status: 409 });
+    }
+
     const opposingRole = getOpposingRole(courtroom.caseType, hostMember.role);
     if (!opposingRole) {
       return NextResponse.json({ error: 'Cannot determine opposing role' }, { status: 400 });
@@ -72,14 +94,16 @@ export async function POST(request: Request) {
         role: opposingRole,
         joinedAt: new Date(),
       });
-    } catch (error: any) {
-      if (error?.code === 11000) {
-        return NextResponse.json({ error: 'Already a member' }, { status: 400 });
-      }
-      // If someone else claimed the slot
-      const count = await CourtroomMember.countDocuments({ courtroomId: courtroom._id });
-      if (count >= 2) {
-        return NextResponse.json({ error: 'Courtroom is full' }, { status: 400 });
+    } catch (error) {
+      if (typeof error === 'object' && error !== null && 'code' in error && error.code === 11000) {
+        const duplicateMembership = await CourtroomMember.exists({
+          courtroomId: courtroom._id,
+          userId: user._id,
+        });
+        return NextResponse.json(
+          { error: duplicateMembership ? 'Already a member' : 'Courtroom side has already been claimed' },
+          { status: 409 }
+        );
       }
       throw error;
     }
@@ -90,7 +114,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true, courtroomId: courtroom._id }, { status: 200 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to join courtroom' }, { status: 500 });
   }
 }

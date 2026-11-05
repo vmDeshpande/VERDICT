@@ -1,12 +1,12 @@
 import { z } from 'zod';
 
 export const createCourtroomSchema = z.object({
-  caseId: z.string().min(1, 'Case ID is required'),
+  caseId: z.string().regex(/^[a-f\d]{24}$/i, 'Invalid case ID'),
   hostRole: z.enum(['PLAINTIFF', 'DEFENDANT', 'PROSECUTION', 'DEFENSE']),
 });
 
 export const joinCourtroomSchema = z.object({
-  invitationCode: z.string().trim().min(1, 'Invitation code is required'),
+  invitationCode: z.string().trim().min(1, 'Invitation code is required').max(64),
 });
 
 export type CreateCourtroomInput = z.infer<typeof createCourtroomSchema>;
